@@ -3,7 +3,8 @@ name: Build Samsung APK
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
+    branches:
+      - main
 
 jobs:
   build:
@@ -13,18 +14,36 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install dependencies
+      - name: Install system packages
         run: |
           sudo apt-get update
-          sudo apt-get install -y git zip unzip openjdk-17-jdk python3-pip python3-venv autoconf libtool pkg-config zlib1g-dev libncurses-dev cmake libffi-dev libssl-dev
+          sudo apt-get install -y \
+            git zip unzip \
+            openjdk-17-jdk \
+            python3-pip python3-venv \
+            autoconf libtool pkg-config \
+            zlib1g-dev libncurses-dev \
+            cmake libffi-dev libssl-dev
 
-      - name: Install Buildozer
+      - name: Accept Android SDK licenses
+        run: |
+          yes | sdkmanager --licenses || true
+
+      - name: Install Android SDK tools
+        run: |
+          sdkmanager "platform-tools"
+          sdkmanager "platforms;android-35"
+          sdkmanager "build-tools;35.0.0"
+          sdkmanager "build-tools;37.0.0"
+
+      - name: Install Python build tools
         run: |
           python3 -m pip install --upgrade pip
           python3 -m pip install buildozer cython
 
       - name: Build APK
-        run: buildozer -v android debug
+        run: |
+          buildozer -v android debug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
